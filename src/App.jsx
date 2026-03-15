@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import ControlPanel from "./components/ControlPanel";
 import MemoryPanel from "./components/MemoryPanel";
 import RoundLog from "./components/RoundLog";
@@ -12,7 +12,7 @@ import {
   buildEvaluationPrompt,
   EVALUATOR_SYSTEM,
 } from "./lib/prompts";
-import { callWithFallback, createProviders, pingProviders } from "./lib/providers";
+import { callWithFallback, pingProviders } from "./lib/providers";
 import { cloneState, loadStoredState, saveStoredState } from "./lib/storage";
 
 const defaultState = {
@@ -81,7 +81,6 @@ export default function App() {
   const [status, setStatus] = useState("Idle");
   const [running, setRunning] = useState(false);
   const [providerMessage, setProviderMessage] = useState("");
-  const providersRef = useRef(createProviders());
 
   useEffect(() => {
     saveStoredState(battleConfig);
@@ -98,7 +97,7 @@ export default function App() {
 
     setStatus("Pinging providers");
     try {
-      const results = await pingProviders(providersRef.current);
+      const results = await pingProviders();
       setProviderMessage(
         results
           .map((result) => `${result.provider}: ${result.status} (${result.detail})`)
@@ -131,7 +130,6 @@ export default function App() {
         setStatus(`Running round ${round}/${workingState.rounds}`);
 
         const attack = await callWithFallback(
-          providersRef.current,
           workingState.providerConfig.attacker,
           buildAttackerSystem(workingState.memories.artemis),
           buildAttackPrompt({
@@ -143,7 +141,6 @@ export default function App() {
         );
 
         const defense = await callWithFallback(
-          providersRef.current,
           workingState.providerConfig.defender,
           buildDefenderSystem(workingState.memories.aegis),
           buildDefensePrompt({
@@ -156,7 +153,6 @@ export default function App() {
         );
 
         const evaluation = await callWithFallback(
-          providersRef.current,
           workingState.providerConfig.evaluator,
           EVALUATOR_SYSTEM,
           buildEvaluationPrompt({

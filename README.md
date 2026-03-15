@@ -1,62 +1,70 @@
-# Adversarial Red Team
+# Blackwall
 
-A React + Vite app for running a three-agent adversarial prompt battle:
+Blackwall is a React + Vite adversarial red-team console for running structured battles between three agents:
 
-- `ARTEMIS` generates attacks
-- `AEGIS` defends against them
-- `JUDGE` evaluates the round
+- `ARTEMIS` attacks
+- `AEGIS` defends
+- `JUDGE` evaluates
 
-The app is designed as a browser-based red-team arena with:
-
-- multi-provider LLM routing
-- fallback handling across providers
-- local persistence for rounds and agent memory
-- configurable attacker / defender / evaluator assignments
-- a hacker-style UI for live battle monitoring
-
-## Stack
-
-- React
-- Vite
-- Browser `fetch` for provider calls
-- `localStorage` for persisted state
+The frontend is a Vite app, but provider API calls now run server-side through local `/api` handlers and Vercel serverless routes. That keeps provider secrets out of the browser bundle and makes deployment sane.
 
 ## Features
 
-- Run multi-round adversarial battles between three agents
-- Use Groq, Gemini, OpenRouter, Cerebras, Together, and Mistral
-- Configure provider defaults via `.env`
-- Ping configured providers before running a battle
-- Persist round logs and memory across refreshes
-- Show clearer UI errors for invalid provider model IDs
-- Reset the UI back to `.env` defaults
+- Multi-round attacker / defender / evaluator battle flow
+- Provider routing with fallback across Groq, Gemini, OpenRouter, Cerebras, Together, and Mistral
+- Persistent round history and agent memory via `localStorage`
+- Clearer invalid-model and provider failure messages
+- Hacker-console UI branded as Blackwall
+- Local dev support and Vercel deployment support using the same API logic
+
+## Tech Stack
+
+- React
+- Vite
+- Vercel serverless API routes
+- Browser `localStorage`
+
+## Architecture
+
+### Frontend
+
+- UI lives in `src/`
+- The browser calls:
+  - `POST /api/chat`
+  - `POST /api/ping`
+
+### Backend
+
+- Server routes live in `api/`
+- Provider secrets are read from server environment variables
+- Fallback and rate-limiting logic lives in:
+  - [api/_lib/providers.js](./api/_lib/providers.js)
+  - [api/_lib/handlers.js](./api/_lib/handlers.js)
 
 ## Project Structure
 
 ```text
 .
+├── api
+│   ├── chat.js
+│   ├── ping.js
+│   └── _lib
+│       ├── handlers.js
+│       └── providers.js
+├── src
+│   ├── App.jsx
+│   ├── main.jsx
+│   ├── styles.css
+│   ├── components
+│   ├── config
+│   └── lib
 ├── index.html
 ├── package.json
 ├── vite.config.js
-├── .env.example
-└── src
-    ├── App.jsx
-    ├── main.jsx
-    ├── styles.css
-    ├── components
-    │   ├── ControlPanel.jsx
-    │   ├── MemoryPanel.jsx
-    │   ├── RoundLog.jsx
-    │   └── Scoreboard.jsx
-    ├── config
-    │   └── env.js
-    └── lib
-        ├── prompts.js
-        ├── providers.js
-        └── storage.js
+└── .env.example
 ```
 
-## Getting Started
+## Setup
 
 ### 1. Install dependencies
 
@@ -64,26 +72,35 @@ The app is designed as a browser-based red-team arena with:
 npm install
 ```
 
-### 2. Create your environment file
-
-Copy `.env.example` to `.env` and fill in the providers you want to use.
+### 2. Create `.env`
 
 ```bash
 cp .env.example .env
 ```
 
-### 3. Configure `.env`
+### 3. Add environment variables
 
-Example:
+Use server-side secrets for provider keys:
 
 ```env
-VITE_GROQ_API_KEY=your_groq_key
-VITE_GOOGLE_API_KEY=your_google_key
-VITE_OPENROUTER_API_KEY=
-VITE_CEREBRAS_API_KEY=
-VITE_TOGETHER_API_KEY=
-VITE_MISTRAL_API_KEY=
+GROQ_API_KEY=your_groq_key
+GOOGLE_API_KEY=your_google_key
+OPENROUTER_API_KEY=
+CEREBRAS_API_KEY=
+TOGETHER_API_KEY=
+MISTRAL_API_KEY=
+```
 
+Optional server-side metadata:
+
+```env
+APP_PUBLIC_URL=http://localhost:5173
+APP_TITLE=Blackwall
+```
+
+Model and UI defaults can remain Vite-exposed:
+
+```env
 VITE_GROQ_MODEL=llama-3.3-70b-versatile
 VITE_GEMINI_MODEL=gemini-2.5-flash
 VITE_OPENROUTER_MODEL=deepseek/deepseek-r1:free
@@ -96,124 +113,104 @@ VITE_DEFAULT_DEFENDER=gemini
 VITE_DEFAULT_EVALUATOR=gemini
 ```
 
-Notes:
+## Local Development
 
-- The current default configuration is `groq / gemini / gemini`
-- `.env` changes require a Vite restart
-- `Reset State` in the UI clears persisted local state and reloads env-backed defaults
-
-### 4. Start the dev server
+Run:
 
 ```bash
 npm run dev
 ```
 
-Open the local URL printed by Vite, usually:
+Open the Vite URL, usually:
 
 ```text
 http://localhost:5173
 ```
 
+The Vite dev server is configured to serve the same `/api/chat` and `/api/ping` handlers locally, so you do not need a separate backend process.
+
+## Production Deployment on Vercel
+
+Add these environment variables in Vercel Project Settings:
+
+### Required server secrets
+
+- `GROQ_API_KEY`
+- `GOOGLE_API_KEY`
+- `OPENROUTER_API_KEY`
+- `CEREBRAS_API_KEY`
+- `TOGETHER_API_KEY`
+- `MISTRAL_API_KEY`
+
+### Optional model config
+
+- `GROQ_MODEL`
+- `GEMINI_MODEL`
+- `OPENROUTER_MODEL`
+- `CEREBRAS_MODEL`
+- `TOGETHER_MODEL`
+- `MISTRAL_MODEL`
+
+### Optional frontend defaults
+
+- `VITE_DEFAULT_ATTACKER`
+- `VITE_DEFAULT_DEFENDER`
+- `VITE_DEFAULT_EVALUATOR`
+
+### Optional app metadata
+
+- `APP_PUBLIC_URL`
+- `APP_TITLE`
+
+After changing environment variables:
+
+1. Redeploy
+2. Open the app
+3. Click `Reset State` if old provider selections are still stored in `localStorage`
+
 ## Usage
 
-1. Start the app
-2. Enter a battle objective
-3. Choose the number of rounds and difficulty
-4. Confirm the provider assignments
+1. Open the app
+2. Set the objective
+3. Choose rounds and difficulty
+4. Confirm the attacker / defender / evaluator providers
 5. Click `Ping Providers`
 6. Click `Run Battle`
 
-The app will:
+During a battle, Blackwall will:
 
-- generate an attack with `ARTEMIS`
-- generate a defense with `AEGIS`
-- evaluate the round with `JUDGE`
+- request an attack from `ARTEMIS`
+- request a defense from `AEGIS`
+- request a ruling from `JUDGE`
 - update scores
-- store round logs and agent memory in `localStorage`
+- store round packets and memory locally
 
-## Provider Behavior
-
-Provider setup lives in:
-
-- [src/config/env.js](./src/config/env.js)
-- [src/lib/providers.js](./src/lib/providers.js)
-
-The router supports:
-
-- primary provider selection per role
-- fallback attempts across other configured providers
-- rate limiting per provider
-- judge-specific lower temperature
-- improved invalid-model error messages
-
-If a provider returns a `404` because the configured model slug is invalid, the UI now shows a clearer message indicating:
-
-- which provider failed
-- which model is configured
-- that the model should be updated in `.env` or the role switched
-
-## Persistence
-
-Battle state is stored in browser `localStorage`, including:
-
-- objective
-- rounds
-- difficulty
-- scores
-- round logs
-- ARTEMIS / AEGIS / JUDGE memory
-- selected provider configuration
-
-If you change defaults in `.env` and the UI still shows old providers, click `Reset State`.
-
-## Available Scripts
+## Scripts
 
 ```bash
 npm run dev
 npm run build
-npm run preview
-```
-
-## Build
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-Preview the production build locally:
-
-```bash
 npm run preview
 ```
 
 ## Security Notes
 
 - Do not commit your real `.env`
-- `.env` is already ignored in `.gitignore`
-- If you have already exposed API keys publicly, rotate them immediately
-- This app calls provider APIs directly from the browser, so treat it as a prototype or internal tool unless you move secrets server-side
+- `.env` is ignored by git
+- Rotate any keys that were ever exposed in screenshots, commits, logs, or frontend bundles
+- Server-side keys should use `GROQ_API_KEY`, `GOOGLE_API_KEY`, etc., not `VITE_*_API_KEY`
 
-## Current Limitations
+## Limitations
 
-- Provider APIs are called client-side
-- Model availability can change over time
-- Free-tier limits vary by provider
-- Output quality and JSON cleanliness depend on model behavior
-- Some providers may rate-limit or reject deprecated model IDs
+- Provider availability and free-tier limits change over time
+- Model slugs can go stale
+- Some providers may still fail due to quota, auth, or upstream availability
+- Battle state persists in browser `localStorage`, which can preserve stale provider choices until reset
 
 ## Recommended Defaults
-
-For the current setup:
 
 - `ARTEMIS`: `groq`
 - `AEGIS`: `gemini`
 - `JUDGE`: `gemini`
 
-If you see evaluator bias or repeated model issues, switch `JUDGE` to a different provider in the UI or update `.env`.
-
-## License
-
-Add your preferred license here.
-# Blackwall
+If `AEGIS` appears overly dominant, move `JUDGE` to another provider family to reduce evaluation bias.
