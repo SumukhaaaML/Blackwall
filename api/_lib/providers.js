@@ -115,10 +115,6 @@ async function callProvider(providers, providerKey, system, user, options = {}) 
     ],
   };
 
-  if (providerKey === "gemini") {
-    payload.response_mime_type = "application/json";
-  }
-
   const response = await fetch(provider.url, {
     method: "POST",
     headers: {

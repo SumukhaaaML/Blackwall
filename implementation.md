@@ -1,7 +1,6 @@
 # ADVERSARIAL RED TEAM — Free Model Implementation Guide
 
-> **100% free. Zero cost.** All three agents run on free-tier providers.
-> No Claude API required anywhere in the pipeline.
+> **100% free. Zero cost.** 
 
 ---
 
