@@ -8,6 +8,8 @@ Blackwall is a React + Vite adversarial red-team console for running structured 
 
 The frontend is a Vite app, but provider API calls now run server-side through local `/api` handlers and Vercel serverless routes. That keeps provider secrets out of the browser bundle and makes deployment sane.
 
+Live deployment: https://blackwall-sumukhaaamls-projects.vercel.app/
+
 ## Features
 
 - Multi-round attacker / defender / evaluator battle flow
